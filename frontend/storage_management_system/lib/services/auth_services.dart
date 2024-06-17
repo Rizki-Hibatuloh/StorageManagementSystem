@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
 
 class AuthService {
   static String? token;
+  File? _image;
 
   Future<Map<String, dynamic>> login({
     required String username,
@@ -9,7 +13,7 @@ class AuthService {
   }) async {
     try {
       var response = await Dio().post(
-        'http://192.168.149.138:4000/users/login',
+        'http://192.168.116.138:4000/users/login',
         options: Options(
           headers: {
             'Content-Type': 'application/json',
@@ -40,7 +44,7 @@ class AuthService {
   }) async {
     try {
       var response = await Dio().post(
-        'http://192.168.149.138:4000/users/register',
+        'http://192.168.116.138:4000/users/register',
         options: Options(
           headers: {
             'Content-Type': 'application/json',
@@ -64,6 +68,24 @@ class AuthService {
         'success': false,
         'message': e.response?.data['err'] ?? 'Registration failed',
       };
+    }
+  }
+
+  Future<void> uploadProfile() async {
+    if (_image != null) {
+      final request = http.MultipartRequest(
+          'POST', Uri.parse('https://192.168.116.138:4000/users/profile'));
+      request.files.add(http.MultipartFile.fromBytes(
+        'image',
+        _image!.readAsBytesSync(),
+        filename: _image!.path,
+      ));
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        print('Image uploaded successfully!');
+      } else {
+        print('Error uploading image: ${response.statusCode}');
+      }
     }
   }
 }

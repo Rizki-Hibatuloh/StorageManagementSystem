@@ -5,46 +5,54 @@ const { where } = require('sequelize')
 
 class UserController {
     async register(req, res) {
-    try { 
-        const { username, password, image } = req.body;
+    try {
+      const { username, password, image } = req.body;
 
-        if (!username || !password) {
-            return res.status(400).json({ err: 'All fields are required' });
-        }
+      console.log(`Register attempt with username: ${username}`);
 
-        const existingUser = await User.findOne({ where: { username } });
-        if (existingUser) {
-            return res.status(400).json({ err: 'Username is already taken' });
-        }
+      if (!username || !password) {
+        return res.status(400).json({ err: 'All fields are required' });
+      }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = await User.create({ username, password: hashedPassword, image });
-        res.status(201).json({ message: 'Registration successful', user: newUser });
+      const existingUser = await User.findOne({ where: { username } });
+      if (existingUser) {
+        return res.status(400).json({ err: 'Username is already taken' });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newUser = await User.create({ username, password: hashedPassword, image });
+      console.log('Registration successful', newUser);
+      res.status(201).json({ message: 'Registration successful', user: newUser });
     } catch (err) {
-        res.status(500).json({ err: 'Failed to register' });
+      console.error('Failed to register:', err);
+      res.status(500).json({ err: 'Failed to register' });
     }
-}
+  }
 
-    async login(req, res) {
-    try { 
-        const { username, password } = req.body;
+  async login(req, res) {
+    try {
+      const { username, password } = req.body;
 
-        if (!username || !password) {
-            return res.status(400).json({ err: 'All fields are required' });
-        }
+      console.log(`Login attempt with username: ${username}`);
 
-        const user = await User.findOne({ where: { username } });
-        if (!user || !await bcrypt.compare(password, user.password)) {
-            return res.status(401).json({ err: 'Invalid username or password' });
-        }
+      if (!username || !password) {
+        return res.status(400).json({ err: 'All fields are required' });
+      }
 
-        const token = jwt.sign({ id: user.id }, 'secret', { expiresIn: '1h' });
-        res.json({ status: 'Login Successful', token });
+      const user = await User.findOne({ where: { username } });
+      if (!user || !await bcrypt.compare(password, user.password)) {
+        console.log('Invalid username or password');
+        return res.status(401).json({ err: 'Invalid username or password' });
+      }
 
+      const token = jwt.sign({ id: user.id }, 'secret', { expiresIn: '1h' });
+      console.log('Login successful');
+      res.json({ status: 'Login Successful', token });
     } catch (err) {
-        res.status(500).json({ err: 'Failed to login' });
+      console.error('Failed to login:', err);
+      res.status(500).json({ err: 'Failed to login' });
     }
-}
+  }
 
     async uploadProfile(req, res) {
         try { 

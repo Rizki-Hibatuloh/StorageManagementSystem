@@ -7,12 +7,11 @@ const router = express.Router();
 
 router.get('/', productController.getAllProducts);
 router.get('/:id', productController.getProductById);
-router.post('/', productController.createProduct);
-router.put('/:id', productController.updateProduct);
-router.delete('/:id', productController.deleteProduct);
+router.post('/products/create', UploadController.upload('products'), (req, res) => productController.createProduct(req, res));
 
-router.post('/upload', UploadController.upload('products'), (req, res) => {
-    productController.uploadImage(req, res)
-})
+router.put('/update/:id', productController.updateProduct);
+router.delete('/delete/:id', productController.deleteProduct);
+
+
 
 module.exports = router;

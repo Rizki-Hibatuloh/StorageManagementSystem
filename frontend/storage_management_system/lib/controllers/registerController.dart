@@ -29,6 +29,7 @@ class RegisterController extends State<RegisterPage> {
     return RegisterPageContent(controller: this);
   }
 
+  // RegisterController
   void register() async {
     String username = usernameController.text;
     String password = passwordController.text;
@@ -61,10 +62,19 @@ class RegisterController extends State<RegisterPage> {
         content: Text(
           message,
           style: TextStyle(
-              fontSize: 20, color: Colors.black), // Font size dan warna teks
+            fontSize: 20,
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'CustomFont', // Mengganti font
+          ),
         ),
-        backgroundColor: Colors.orange[300], // Warna latar belakang
-        behavior: SnackBarBehavior.floating, // Snackbar mengambang
+        backgroundColor: Colors.white,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        elevation: 10,
+        margin: EdgeInsets.all(10),
       ),
     );
   }
