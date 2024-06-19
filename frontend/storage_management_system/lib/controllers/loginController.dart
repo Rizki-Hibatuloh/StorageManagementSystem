@@ -1,41 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:storage_management_system/pages/login_page.dart';
-import 'package:storage_management_system/pages/product_page.dart'; // Import halaman utama Anda
+import 'package:storage_management_system/pages/product_page.dart'; // Pastikan import halaman home
 import 'package:storage_management_system/pages/register_page.dart';
 import 'package:storage_management_system/services/auth_services.dart';
 
-class LoginController extends State<LoginPage> {
-  static late LoginController instance;
-  late LoginPage widget;
+class LoginController {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   final AuthService _authService = AuthService();
 
-  @override
-  void initState() {
-    instance = this;
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    usernameController.dispose();
-    passwordController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return LoginPageContent(controller: this);
-  }
-
-  void login() async {
+  void login(BuildContext context) async {
     String username = usernameController.text;
     String password = passwordController.text;
 
     if (username.isEmpty || password.isEmpty) {
-      _showSnackbar('All fields are required.');
+      _showSnackbar(context, 'All fields are required.');
       return;
     }
 
@@ -45,18 +24,17 @@ class LoginController extends State<LoginPage> {
     );
 
     if (result['success']) {
-      _showSnackbar(result['message']);
+      _showSnackbar(context, result['message']);
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-            builder: (context) => ProductPage()), // Halaman utama Anda
+        MaterialPageRoute(builder: (context) => ProductPage()),
       );
     } else {
-      _showSnackbar(result['message']);
+      _showSnackbar(context, result['message']);
     }
   }
 
-  void _showSnackbar(String message) {
+  void _showSnackbar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -65,7 +43,7 @@ class LoginController extends State<LoginPage> {
             height: 2,
             fontSize: 20,
             color: Color.fromARGB(255, 241, 241, 241),
-            fontWeight: FontWeight.bold, // Membuat teks bold
+            fontWeight: FontWeight.bold,
           ),
         ),
         backgroundColor: Colors.orange[300],
@@ -73,9 +51,8 @@ class LoginController extends State<LoginPage> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
-        elevation: 10, // Tinggi bayangan
-        margin: EdgeInsets.all(
-            10), // Margin untuk memberikan ruang agar bayangan terlihat
+        elevation: 10,
+        margin: EdgeInsets.all(10),
       ),
     );
   }
@@ -83,14 +60,7 @@ class LoginController extends State<LoginPage> {
   void goToRegister(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const RegisterPage()),
+      MaterialPageRoute(builder: (context) => RegisterPageContent()),
     );
   }
-}
-
-void goToRegister(BuildContext context) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => const RegisterPage()),
-  );
 }

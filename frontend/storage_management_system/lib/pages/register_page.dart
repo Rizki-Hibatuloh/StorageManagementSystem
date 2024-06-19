@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:storage_management_system/controllers/registerController.dart';
 import 'package:storage_management_system/widgets/button.dart';
 import 'package:storage_management_system/widgets/form.dart';
 
-class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
+class RegisterPageContent extends StatefulWidget {
+  const RegisterPageContent({Key? key}) : super(key: key);
 
   @override
-  RegisterController createState() => RegisterController();
+  State<RegisterPageContent> createState() => _RegisterPageContentState();
 }
 
-class RegisterPageContent extends StatelessWidget {
-  final RegisterController controller;
-
-  const RegisterPageContent({required this.controller});
-
+class _RegisterPageContentState extends State<RegisterPageContent> {
   @override
   Widget build(BuildContext context) {
+    final RegisterController controller =
+        Provider.of<RegisterController>(context);
+
     return Scaffold(
       body: Container(
         padding: const EdgeInsets.symmetric(vertical: 30),
@@ -77,12 +77,23 @@ class RegisterPageContent extends StatelessWidget {
                             controller: controller.passwordController,
                             isPassword: true,
                           ),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: () => controller.pickImage(),
+                            child: Text('Pick Profile Picture'),
+                          ),
+                          if (controller.image != null)
+                            Image.file(
+                              controller.image!,
+                              height: 50,
+                              width: 100,
+                            ),
                         ],
                       ),
                       const SizedBox(height: 20),
                       CustomButton(
                         text: "Register",
-                        onPressed: controller.register,
+                        onPressed: () => controller.register(context),
                         color: Colors.orange[800]!,
                       ),
                       const SizedBox(height: 20),
@@ -91,7 +102,8 @@ class RegisterPageContent extends StatelessWidget {
                         children: [
                           const Text("Already have an account? "),
                           InkWell(
-                            onTap: () => controller.goToLogin(context),
+                            onTap: () => Navigator.pushReplacementNamed(
+                                context, '/login'),
                             child: const Text(
                               "Login",
                               style: TextStyle(color: Colors.orange),

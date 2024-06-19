@@ -1,11 +1,10 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   static String? token;
-  File? _image;
 
   Future<Map<String, dynamic>> login({
     required String username,
@@ -25,6 +24,14 @@ class AuthService {
 
       if (response.statusCode == 200) {
         token = obj['token'];
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('username', username);
+
+        if (obj['profilePicture'] != null) {
+          await prefs.setString('profilePicture', obj['profilePicture']);
+        }
+
         return {'success': true, 'message': obj['status']};
       } else {
         return {'success': false, 'message': obj['err']};
@@ -41,19 +48,24 @@ class AuthService {
   Future<Map<String, dynamic>> register({
     required String username,
     required String password,
+    required File image,
   }) async {
     try {
+      FormData formData = FormData.fromMap({
+        'username': username,
+        'password': password,
+        'profilePicture': await MultipartFile.fromFile(image.path,
+            filename: image.path.split('/').last),
+      });
+
       var response = await Dio().post(
         'http://192.168.116.138:4000/users/register',
         options: Options(
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'multipart/form-data',
           },
         ),
-        data: {
-          'username': username,
-          'password': password,
-        },
+        data: formData,
       );
       Map<String, dynamic> obj = response.data;
 
@@ -68,24 +80,6 @@ class AuthService {
         'success': false,
         'message': e.response?.data['err'] ?? 'Registration failed',
       };
-    }
-  }
-
-  Future<void> uploadProfile() async {
-    if (_image != null) {
-      final request = http.MultipartRequest(
-          'POST', Uri.parse('https://192.168.116.138:4000/users/profile'));
-      request.files.add(http.MultipartFile.fromBytes(
-        'image',
-        _image!.readAsBytesSync(),
-        filename: _image!.path,
-      ));
-      final response = await request.send();
-      if (response.statusCode == 200) {
-        print('Image uploaded successfully!');
-      } else {
-        print('Error uploading image: ${response.statusCode}');
-      }
     }
   }
 }

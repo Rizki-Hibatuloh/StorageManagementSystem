@@ -1,8 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:storage_management_system/services/api_service.dart';
 
 class CreateProductPage extends StatefulWidget {
   @override
@@ -11,91 +12,217 @@ class CreateProductPage extends StatefulWidget {
 
 class _CreateProductPageState extends State<CreateProductPage> {
   final _formKey = GlobalKey<FormState>();
-  String _productName = '';
-  int _productQty = 0;
+  final _nameController = TextEditingController();
+  final _qtyController = TextEditingController();
+  String? _selectedCategory;
+  int? _createdBy;
   File? _imageFile;
-  final ImagePicker _picker = ImagePicker();
+  List<dynamic> _categories = [];
 
-  Future<void> _pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+    _loadCategories();
+  }
+
+  void _loadUser() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? userId = prefs.getInt('userId');
     setState(() {
-      if (pickedFile != null) {
-        _imageFile = File(pickedFile.path);
-      }
+      _createdBy = userId ??
+          -1; // -1 atau nilai default yang sesuai jika userId tidak ada
     });
   }
 
-  Future<void> _createProduct() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-
-      var request = http.MultipartRequest(
-          'POST', Uri.parse('http://192.168.116.138/products/create'));
-      request.fields['name'] = _productName;
-      request.fields['qty'] = _productQty.toString();
-      if (_imageFile != null) {
-        request.files
-            .add(await http.MultipartFile.fromPath('image', _imageFile!.path));
-      }
-
-      var response = await request.send();
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Product created successfully')));
-        Navigator.pop(context);
-      } else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to create product')));
-      }
+  void _loadCategories() async {
+    try {
+      List<dynamic> categories = await ApiService.getCategories();
+      setState(() {
+        _categories = categories;
+      });
+    } catch (e) {
+      print('Failed to load categories: $e');
     }
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      if (!_isValidImageType(pickedFile.path)) {
+        // File tidak valid, berikan pesan kesalahan
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('Invalid file type. Only jpg, png, and jpeg are allowed.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+
+      // Menambahkan debugging untuk melihat tipe MIME dari file yang dipilih
+      print('MIME type: ${_imageFile!.path.split('.').last}');
+    }
+  }
+
+// Validasi tipe file
+  bool _isValidImageType(String path) {
+    final validTypes = ['jpg', 'jpeg', 'png'];
+    final fileType = path.split('.').last.toLowerCase();
+    return validTypes.contains(fileType);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Create Product')),
+      appBar: AppBar(
+        title: Text('Create Product'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
+          child: ListView(
             children: <Widget>[
               TextFormField(
-                decoration: InputDecoration(labelText: 'Product Name'),
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'Product Name',
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Please enter a product name';
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter product name';
                   }
                   return null;
                 },
-                onSaved: (value) {
-                  _productName = value!;
-                },
               ),
+              SizedBox(height: 16.0),
               TextFormField(
-                decoration: InputDecoration(labelText: 'Quantity'),
+                controller: _qtyController,
+                decoration: InputDecoration(
+                  labelText: 'Quantity',
+                  border: OutlineInputBorder(),
+                ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
-                  if (value!.isEmpty || int.tryParse(value) == null) {
-                    return 'Please enter a valid quantity';
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter quantity';
                   }
                   return null;
                 },
-                onSaved: (value) {
-                  _productQty = int.parse(value!);
+              ),
+              SizedBox(height: 16.0),
+              DropdownButtonFormField<String>(
+                value: _selectedCategory,
+                decoration: InputDecoration(
+                  labelText: 'Category',
+                  border: OutlineInputBorder(),
+                ),
+                items: _categories.map((category) {
+                  return DropdownMenuItem(
+                    value: category['id'].toString(),
+                    child: Text(category['name']),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCategory = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Please select a category';
+                  }
+                  return null;
                 },
               ),
-              SizedBox(height: 20),
-              _imageFile == null
-                  ? Text('No image selected.')
-                  : Image.file(_imageFile!, height: 150),
+              SizedBox(height: 16.0),
+              TextFormField(
+                readOnly: true,
+                initialValue: _createdBy?.toString() ?? 'Unknown User',
+                decoration: InputDecoration(
+                  labelText: 'Created By',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 16.0),
               ElevatedButton(
                 onPressed: _pickImage,
-                child: Text('Pick Image'),
+                child: Text('Pick Product Image'),
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 16.0),
+              if (_imageFile != null)
+                Image.file(
+                  _imageFile!,
+                  height: 100,
+                ),
+              SizedBox(height: 16.0),
               ElevatedButton(
-                onPressed: _createProduct,
+                onPressed: () async {
+                  if (_formKey.currentState!.validate()) {
+                    int? categoryId;
+                    int? createdBy;
+
+                    try {
+                      categoryId = int.parse(_selectedCategory!);
+                      createdBy =
+                          _createdBy; // Tidak perlu parse karena sudah integer
+                    } catch (e) {
+                      print('Error parsing value: $e');
+                      return;
+                    }
+
+                    final productData = {
+                      'name': _nameController.text,
+                      'qty': _qtyController.text,
+                      'categoryId': categoryId,
+                      'createdBy': createdBy,
+                    };
+
+                    var response;
+                    try {
+                      response = await ApiService.createProduct(
+                          productData, _imageFile);
+                      print('Product data: $productData');
+                      print('Response status code: ${response.statusCode}');
+                      print('Response data: ${response.data}');
+                    } catch (e) {
+                      print('Error creating product: $e');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to create product: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (response.statusCode == 201) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Product created successfully'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              'Failed to create product: ${response.data}'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
                 child: Text('Create Product'),
               ),
             ],

@@ -45,11 +45,11 @@ class CustomTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(10),
+      padding: EdgeInsets.all(15),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: Colors.grey[200]!,
+            color: Colors.grey[400]!,
           ),
         ),
       ),
@@ -59,7 +59,7 @@ class CustomTextField extends StatelessWidget {
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(
-            color: Colors.grey[300]!,
+            color: Colors.grey[500]!,
           ),
           border: InputBorder.none,
         ),

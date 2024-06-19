@@ -1,5 +1,5 @@
-const { Product, User, Category } = require('../models');
-const UploadController = require('../controllers/UploadController');
+const { Product } = require('../models');
+const UploadController = require('../controllers/UploadController'); 
 
 class ProductController {
   async getAllProducts(req, res) {
@@ -44,7 +44,7 @@ class ProductController {
         updatedBy,
       });
 
-      res.status(201).json({ message: 'Product has been created successfully' });
+      res.status(201).json({ message: 'Product has been created successfully', product });
     } catch (err) {
       console.error('Error creating product:', err);
       res.status(500).json({ error: 'Failed to create product' });
@@ -54,10 +54,14 @@ class ProductController {
   async updateProduct(req, res) {
     try {
       const { id } = req.params;
-      const { name, qty, categoryId, urlImage, createdBy, updatedBy } = req.body;
+      const { name, qty, categoryId, createdBy, updatedBy } = req.body;
       const product = await Product.findByPk(id);
       if (!product) {
         return res.status(404).json({ error: 'Product not found' });
+      }
+      let urlImage = product.urlImage;
+      if (req.file) {
+        urlImage = `/images/products/${req.file.filename}`;
       }
       await product.update({ name, qty, categoryId, urlImage, createdBy, updatedBy });
       res.json({ message: 'Product has been updated successfully' });
