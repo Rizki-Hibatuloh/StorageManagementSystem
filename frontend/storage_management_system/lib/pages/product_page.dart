@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:storage_management_system/pages/create_product_page.dart';
 import 'package:storage_management_system/pages/login_page.dart';
 import 'package:storage_management_system/pages/update_product_page.dart';
-import 'package:storage_management_system/services/api_service.dart'; // Import ApiService
+import 'package:storage_management_system/services/api_service.dart';
 
 class ProductPage extends StatefulWidget {
   @override
@@ -24,6 +24,7 @@ class _ProductPageState extends State<ProductPage> {
     _loadCategories(); // Panggil fungsi untuk memuat kategori
   }
 
+  // Fungsi untuk memuat data pengguna dari SharedPreferences
   void _loadUser() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -32,10 +33,10 @@ class _ProductPageState extends State<ProductPage> {
     });
   }
 
+  // Fungsi untuk memuat kategori dari API
   void _loadCategories() async {
     try {
       List<dynamic> categories = await ApiService.getCategories();
-      print('Categories loaded: $categories');
       setState(() {
         _categories = categories;
       });
@@ -44,6 +45,7 @@ class _ProductPageState extends State<ProductPage> {
     }
   }
 
+  // Fungsi untuk logout dan menghapus data pengguna dari SharedPreferences
   void _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
@@ -53,6 +55,7 @@ class _ProductPageState extends State<ProductPage> {
     );
   }
 
+  // Fungsi untuk mencari produk berdasarkan ID
   Future<void> _searchProductById(String productId) async {
     try {
       dynamic product = await ApiService.getProductById(productId);
@@ -64,18 +67,6 @@ class _ProductPageState extends State<ProductPage> {
       setState(() {
         _searchedProduct = null;
       });
-    }
-  }
-
-  Future<void> _deleteProduct(int productId) async {
-    try {
-      await ApiService.deleteProduct(productId);
-      setState(() {
-        _categories =
-            _categories.where((product) => product['id'] != productId).toList();
-      });
-    } catch (e) {
-      print('Error deleting product: $e');
     }
   }
 
@@ -128,30 +119,6 @@ class _ProductPageState extends State<ProductPage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => CreateProductPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.update, color: Colors.blueGrey),
-              title: Text('Update Product',
-                  style: TextStyle(color: Colors.blueGrey)),
-              onTap: () {
-                Navigator.pop(context); // Close the drawer
-
-                // Example: Provide initialData to UpdateProductPage
-                Map<String, dynamic> productData = {
-                  'name': 'Product Name',
-                  'qty': 10,
-                  'category': 'Electronics',
-                  // Add other fields as needed
-                };
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        UpdateProductPage(initialData: productData),
-                  ),
                 );
               },
             ),
@@ -230,6 +197,12 @@ class _ProductPageState extends State<ProductPage> {
               ),
             ),
             if (_searchedProduct != null) _buildSearchedProductView(),
+            if (_searchedProduct == null && _searchController.text.isNotEmpty)
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Text('No product found with the given ID.'),
+              ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                   8.5, 15, 8.5, 8), // Padding untuk TabBar
@@ -284,6 +257,7 @@ class _ProductPageState extends State<ProductPage> {
     );
   }
 
+  // Widget untuk menampilkan semua produk
   Widget _buildAllProductsView() {
     return FutureBuilder<List<dynamic>>(
       future:
@@ -291,7 +265,6 @@ class _ProductPageState extends State<ProductPage> {
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           List<dynamic> products = snapshot.data!;
-          print('All Products loaded: $products');
           return GridView.builder(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
@@ -312,47 +285,56 @@ class _ProductPageState extends State<ProductPage> {
                         borderRadius:
                             BorderRadius.vertical(top: Radius.circular(4.0)),
                         child: AspectRatio(
-                          aspectRatio: 16 / 9, // Ratio sesuai kebutuhan
+                          aspectRatio: 16 / 9,
                           child: products[index]['urlImage'] != null
                               ? Image.network(
-                                  'http://192.168.116.138:4000${products[index]['urlImage']}',
+                                  'http://192.168.228.138:4000${products[index]['urlImage']}',
                                   fit: BoxFit.cover,
                                   errorBuilder: (BuildContext context,
                                       Object exception,
                                       StackTrace? stackTrace) {
                                     return Container(
                                       color: Colors.grey,
-                                      child: Center(
-                                        child: Icon(Icons.broken_image),
-                                      ),
+                                      child: Icon(Icons.image_not_supported),
                                     );
                                   },
                                 )
                               : Container(
-                                  color: Colors
-                                      .grey, // Placeholder jika urlImage null
-                                  child: Center(
-                                    child: Icon(Icons.image_not_supported),
-                                  ),
+                                  color: Colors.grey,
+                                  child: Icon(Icons.image),
                                 ),
                         ),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: ListTile(
-                        title: Text(
-                          products[index]['name'],
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text('Qty: ${products[index]['qty']}'),
-                        trailing: IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            _deleteProduct(products[index]['id']);
-                          },
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            products[index]['name'] ?? '',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            'Stock: ${products[index]['stock']}',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ],
                       ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.edit, color: Colors.blueGrey),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => UpdateProductPage(
+                              product: products[index],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -360,22 +342,21 @@ class _ProductPageState extends State<ProductPage> {
             },
           );
         } else if (snapshot.hasError) {
-          return Center(
-            child: Text('Error loading products: ${snapshot.error}'),
-          );
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else {
+          return Center(child: CircularProgressIndicator());
         }
-        return Center(child: CircularProgressIndicator());
       },
     );
   }
 
+  // Widget untuk menampilkan produk berdasarkan kategori
   Widget _buildCategoryProductsView(int categoryId) {
     return FutureBuilder<List<dynamic>>(
       future: ApiService.getProductsByCategory(categoryId),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           List<dynamic> products = snapshot.data!;
-          print('Products loaded for category $categoryId: $products');
           return GridView.builder(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
@@ -396,47 +377,56 @@ class _ProductPageState extends State<ProductPage> {
                         borderRadius:
                             BorderRadius.vertical(top: Radius.circular(4.0)),
                         child: AspectRatio(
-                          aspectRatio: 16 / 9, // Ratio sesuai kebutuhan
+                          aspectRatio: 16 / 9,
                           child: products[index]['urlImage'] != null
                               ? Image.network(
-                                  'http://192.168.116.138:4000${products[index]['urlImage']}',
+                                  'http://192.168.228.138:4000${products[index]['urlImage']}',
                                   fit: BoxFit.cover,
                                   errorBuilder: (BuildContext context,
                                       Object exception,
                                       StackTrace? stackTrace) {
                                     return Container(
                                       color: Colors.grey,
-                                      child: Center(
-                                        child: Icon(Icons.broken_image),
-                                      ),
+                                      child: Icon(Icons.image_not_supported),
                                     );
                                   },
                                 )
                               : Container(
-                                  color: Colors
-                                      .grey, // Placeholder jika urlImage null
-                                  child: Center(
-                                    child: Icon(Icons.image_not_supported),
-                                  ),
+                                  color: Colors.grey,
+                                  child: Icon(Icons.image),
                                 ),
                         ),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: ListTile(
-                        title: Text(
-                          products[index]['name'],
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text('Qty: ${products[index]['qty']}'),
-                        trailing: IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            _deleteProduct(products[index]['id']);
-                          },
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            products[index]['name'] ?? '',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            'Stock: ${products[index]['stock']}',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ],
                       ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.edit, color: Colors.blueGrey),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => UpdateProductPage(
+                              product: products[index],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -444,24 +434,18 @@ class _ProductPageState extends State<ProductPage> {
             },
           );
         } else if (snapshot.hasError) {
-          return Center(
-            child: Text('Error loading products: ${snapshot.error}'),
-          );
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else {
+          return Center(child: CircularProgressIndicator());
         }
-        return Center(child: CircularProgressIndicator());
       },
     );
   }
 
+  // Widget untuk menampilkan hasil pencarian produk
   Widget _buildSearchedProductView() {
-    if (_searchedProduct == null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        child: Text('No product found with the given ID.'),
-      );
-    }
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: const EdgeInsets.all(8.0),
       child: Card(
         elevation: 3,
         margin: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -475,52 +459,55 @@ class _ProductPageState extends State<ProductPage> {
                   aspectRatio: 16 / 9,
                   child: _searchedProduct['urlImage'] != null
                       ? Image.network(
-                          'http://192.168.116.138:4000${_searchedProduct['urlImage']}',
+                          'http://192.168.228.138:4000${_searchedProduct['urlImage']}',
                           fit: BoxFit.cover,
                           errorBuilder: (BuildContext context, Object exception,
                               StackTrace? stackTrace) {
                             return Container(
                               color: Colors.grey,
-                              child: Center(
-                                child: Icon(Icons.broken_image),
-                              ),
+                              child: Icon(Icons.image_not_supported),
                             );
                           },
                         )
                       : Container(
                           color: Colors.grey,
-                          child: Center(
-                            child: Icon(Icons.image_not_supported),
-                          ),
+                          child: Icon(Icons.image),
                         ),
                 ),
               ),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: ListTile(
-                title: Text(
-                  _searchedProduct['name'],
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Text('Qty: ${_searchedProduct['qty']}'),
-                trailing: IconButton(
-                  icon: Icon(Icons.delete, color: Colors.red),
-                  onPressed: () {
-                    _deleteProduct(_searchedProduct['id']);
-                  },
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _searchedProduct['name'] ?? '',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'Stock: ${_searchedProduct['stock']}',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ],
               ),
+            ),
+            IconButton(
+              icon: Icon(Icons.edit, color: Colors.blueGrey),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UpdateProductPage(
+                      product: _searchedProduct,
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),
       ),
     );
   }
-}
-
-void main() {
-  runApp(MaterialApp(
-    home: ProductPage(),
-  ));
 }

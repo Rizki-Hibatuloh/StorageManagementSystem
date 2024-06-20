@@ -173,8 +173,7 @@ class _CreateProductPageState extends State<CreateProductPage> {
 
                     try {
                       categoryId = int.parse(_selectedCategory!);
-                      createdBy =
-                          _createdBy; // Tidak perlu parse karena sudah integer
+                      createdBy = _createdBy;
                     } catch (e) {
                       print('Error parsing value: $e');
                       return;

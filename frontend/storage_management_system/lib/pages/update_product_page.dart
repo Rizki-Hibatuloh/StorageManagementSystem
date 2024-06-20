@@ -1,10 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:storage_management_system/services/api_service.dart';
+import 'package:storage_management_system/models/product.dart'; // Sesuaikan dengan path yang benar
 
 class UpdateProductPage extends StatefulWidget {
-  final Map<String, dynamic> initialData;
+  final Product product;
 
-  UpdateProductPage({Key? key, required this.initialData}) : super(key: key);
+  UpdateProductPage({required this.product});
 
   @override
   _UpdateProductPageState createState() => _UpdateProductPageState();
@@ -15,37 +20,69 @@ class _UpdateProductPageState extends State<UpdateProductPage> {
   final _nameController = TextEditingController();
   final _qtyController = TextEditingController();
   String? _selectedCategory;
-  String? _imageUrl;
-  String? _updatedBy; // Untuk menyimpan updatedBy user_id
-
-  final List<String> _categories = [
-    'Electronics',
-    'Clothing',
-    'Home Appliances',
-    'Books',
-    'Others'
-  ]; // Contoh kategori
+  int? _createdBy;
+  File? _imageFile;
+  List<dynamic> _categories = [];
 
   @override
   void initState() {
     super.initState();
-    _loadUser(); // Memuat informasi pengguna saat widget diinisialisasi
-    _loadProductData(); // Memuat data produk yang sudah ada untuk diupdate
+    _loadUser();
+    _loadCategories();
+    _initializeForm();
+  }
+
+  void _initializeForm() {
+    _nameController.text = widget.product.name;
+    _qtyController.text = widget.product.qty.toString();
+    _selectedCategory = widget.product.categoryId.toString();
   }
 
   void _loadUser() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? userId = prefs.getInt('userId');
     setState(() {
-      _updatedBy = prefs.getString('username') ??
-          'Unknown User'; // Mengambil username sebagai updatedBy
+      _createdBy = userId ?? -1;
     });
   }
 
-  void _loadProductData() {
-    _nameController.text = widget.initialData['name'] ?? '';
-    _qtyController.text = widget.initialData['qty']?.toString() ?? '';
-    _selectedCategory = widget.initialData['category'] ?? _categories[0];
-    _imageUrl = widget.initialData['imageUrl'] ?? '';
+  void _loadCategories() async {
+    try {
+      List<dynamic> categories = await ApiService.getCategories();
+      setState(() {
+        _categories = categories;
+      });
+    } catch (e) {
+      print('Failed to load categories: $e');
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      if (!_isValidImageType(pickedFile.path)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('Invalid file type. Only jpg, png, and jpeg are allowed.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
+
+  bool _isValidImageType(String path) {
+    final validTypes = ['jpg', 'jpeg', 'png'];
+    final fileType = path.split('.').last.toLowerCase();
+    return validTypes.contains(fileType);
   }
 
   @override
@@ -97,8 +134,8 @@ class _UpdateProductPageState extends State<UpdateProductPage> {
                 ),
                 items: _categories.map((category) {
                   return DropdownMenuItem(
-                    value: category,
-                    child: Text(category),
+                    value: category['id'].toString(),
+                    child: Text(category['name']),
                   );
                 }).toList(),
                 onChanged: (value) {
@@ -116,41 +153,86 @@ class _UpdateProductPageState extends State<UpdateProductPage> {
               SizedBox(height: 16.0),
               TextFormField(
                 readOnly: true,
-                initialValue: _updatedBy,
+                initialValue: _createdBy?.toString() ?? 'Unknown User',
                 decoration: InputDecoration(
-                  labelText: 'Updated By',
+                  labelText: 'Created By',
                   border: OutlineInputBorder(),
                 ),
               ),
               SizedBox(height: 16.0),
               ElevatedButton(
-                onPressed: () async {
-                  // Fungsi untuk memilih gambar dan mengatur _imageUrl
-                  // Ini harus membuka file picker atau image picker
-                },
+                onPressed: _pickImage,
                 child: Text('Pick Product Image'),
               ),
               SizedBox(height: 16.0),
-              if (_imageUrl != null && _imageUrl!.isNotEmpty)
+              if (_imageFile != null)
+                Image.file(
+                  _imageFile!,
+                  height: 100,
+                )
+              else if (widget.product.urlImage != null)
                 Image.network(
-                  _imageUrl!,
+                  widget.product.urlImage!,
                   height: 100,
                 ),
               SizedBox(height: 16.0),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    // Memproses pengiriman formulir
-                    final updatedProductData = {
+                    int? categoryId;
+                    int? createdBy;
+
+                    try {
+                      categoryId = int.parse(_selectedCategory!);
+                      createdBy = _createdBy;
+                    } catch (e) {
+                      print('Error parsing value: $e');
+                      return;
+                    }
+
+                    final productData = {
                       'name': _nameController.text,
-                      'qty': int.parse(_qtyController.text),
-                      'category': _selectedCategory,
-                      'imageUrl': _imageUrl ?? '',
-                      'updatedBy': _updatedBy,
+                      'qty': _qtyController.text,
+                      'categoryId': categoryId,
+                      'createdBy': createdBy,
                     };
 
-                    // Kirim updatedProductData ke backend Anda
-                    print(updatedProductData);
+                    var response;
+                    try {
+                      response = await ApiService.updateProduct(
+                          widget.product.id.toString(),
+                          productData,
+                          _imageFile);
+                      print('Product data: $productData');
+                      print('Response status code: ${response.statusCode}');
+                      print('Response data: ${response.data}');
+                    } catch (e) {
+                      print('Error updating product: $e');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to update product: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (response.statusCode == 200) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Product updated successfully'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              'Failed to update product: ${response.data}'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   }
                 },
                 child: Text('Update Product'),
@@ -161,17 +243,4 @@ class _UpdateProductPageState extends State<UpdateProductPage> {
       ),
     );
   }
-}
-
-void main() {
-  runApp(MaterialApp(
-    home: UpdateProductPage(
-      initialData: {
-        'name': 'Initial Product Name',
-        'qty': 10,
-        'category': 'Electronics',
-        'imageUrl': 'https://example.com/image.jpg',
-      },
-    ),
-  ));
 }

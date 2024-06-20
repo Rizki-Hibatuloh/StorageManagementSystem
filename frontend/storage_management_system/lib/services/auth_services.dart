@@ -12,7 +12,7 @@ class AuthService {
   }) async {
     try {
       var response = await Dio().post(
-        'http://192.168.116.138:4000/users/login',
+        'http://192.168.228.138:4000/users/login',
         options: Options(
           headers: {
             'Content-Type': 'application/json',
@@ -59,7 +59,7 @@ class AuthService {
       });
 
       var response = await Dio().post(
-        'http://192.168.116.138:4000/users/register',
+        'http://192.168.228.138:4000/users/register',
         options: Options(
           headers: {
             'Content-Type': 'multipart/form-data',
