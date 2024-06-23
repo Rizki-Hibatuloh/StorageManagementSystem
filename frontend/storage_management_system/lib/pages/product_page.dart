@@ -6,6 +6,34 @@ import 'package:storage_management_system/pages/login_page.dart';
 import 'package:storage_management_system/pages/update_product_page.dart';
 import 'package:storage_management_system/services/api_service.dart';
 
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Storage Management System',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        hintColor: Colors.deepOrange[300],
+        scaffoldBackgroundColor: Color.fromARGB(255, 236, 231, 222),
+        textTheme: TextTheme(
+          titleLarge: TextStyle(color: Colors.deepOrange[300]),
+        ),
+        appBarTheme: AppBarTheme(
+          color: Colors.blue[800],
+        ),
+        iconTheme: IconThemeData(
+          color: Colors.blueGrey,
+        ),
+      ),
+      home: ProductPage(),
+    );
+  }
+}
+
 class ProductPage extends StatefulWidget {
   @override
   _ProductPageState createState() => _ProductPageState();
@@ -62,11 +90,9 @@ class _ProductPageState extends State<ProductPage> {
 
   Future<void> _searchProductById(String productId) async {
     try {
-      // Panggil API tanpa mengonversi ke URI
       Product? product = await ApiService.getProductById(productId);
       setState(() {
-        _searchedProduct =
-            product; // _searchedProduct harus nullable (Product?)
+        _searchedProduct = product;
       });
     } catch (e) {
       print('Error searching product: $e');
@@ -100,7 +126,7 @@ class _ProductPageState extends State<ProductPage> {
           children: [
             DrawerHeader(
               decoration: BoxDecoration(
-                color: Color.fromARGB(255, 247, 203, 138),
+                color: Colors.blue[800],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,9 +151,8 @@ class _ProductPageState extends State<ProductPage> {
               ),
             ),
             ListTile(
-              leading: Icon(Icons.create, color: Colors.blueGrey),
-              title: Text('Create Product',
-                  style: TextStyle(color: Colors.blueGrey)),
+              leading: Icon(Icons.create),
+              title: Text('Create Product'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -137,8 +162,8 @@ class _ProductPageState extends State<ProductPage> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.logout, color: Colors.blueGrey),
-              title: Text('Logout', style: TextStyle(color: Colors.blueGrey)),
+              leading: Icon(Icons.logout),
+              title: Text('Logout'),
               onTap: () {
                 _logout();
                 Navigator.pop(context);
@@ -152,23 +177,24 @@ class _ProductPageState extends State<ProductPage> {
         child: Column(
           children: [
             Container(
-              color: Color.fromARGB(255, 236, 231, 222),
+              color: Theme.of(context).scaffoldBackgroundColor,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 30, 24, 0),
+                padding: const EdgeInsets.fromLTRB(24, 50, 24, 10),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       username ?? '',
                       style: TextStyle(
-                        fontSize: 27,
+                        fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Colors.deepOrange[300],
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                     ),
                     Builder(
                       builder: (context) => IconButton(
-                        icon: Icon(Icons.menu, color: Colors.deepOrange[300]),
+                        icon: Icon(Icons.menu),
+                        color: Theme.of(context).colorScheme.secondary,
                         onPressed: () => Scaffold.of(context).openEndDrawer(),
                       ),
                     ),
@@ -198,6 +224,12 @@ class _ProductPageState extends State<ProductPage> {
                 controller: _searchController,
                 decoration: InputDecoration(
                   hintText: 'Search Product by ID',
+                  filled: true,
+                  fillColor: Colors.grey[300],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                    borderSide: BorderSide.none,
+                  ),
                   suffixIcon: IconButton(
                     icon: Icon(Icons.search),
                     onPressed: () {
@@ -213,8 +245,14 @@ class _ProductPageState extends State<ProductPage> {
                 child: Column(
                   children: [
                     TabBar(
-                      isScrollable: true,
-                      indicatorColor: Colors.deepOrange[300],
+                      indicator: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Colors.grey[400]!,
+                            width: 2.0,
+                          ),
+                        ),
+                      ),
                       tabs: [
                         Tab(
                           text: 'All',
@@ -290,18 +328,18 @@ class _ProductPageState extends State<ProductPage> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.fromLTRB(5, 8, 5, 8),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             products[index]['name'],
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                                fontSize: 20, fontWeight: FontWeight.bold),
                           ),
                           Text(
                             'qty: ${products[index]['qty']}',
-                            style: TextStyle(fontSize: 14),
+                            style: TextStyle(fontSize: 15),
                           ),
                         ],
                       ),
@@ -310,7 +348,7 @@ class _ProductPageState extends State<ProductPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         IconButton(
-                          icon: Icon(Icons.edit, color: Colors.blueGrey),
+                          icon: Icon(Icons.edit),
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -392,18 +430,18 @@ class _ProductPageState extends State<ProductPage> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.fromLTRB(5, 8, 5, 8),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             products[index]['name'],
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                                fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           Text(
                             'qty: ${products[index]['qty']}',
-                            style: TextStyle(fontSize: 14),
+                            style: TextStyle(fontSize: 15),
                           ),
                         ],
                       ),
@@ -412,7 +450,7 @@ class _ProductPageState extends State<ProductPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         IconButton(
-                          icon: Icon(Icons.edit, color: Colors.blueGrey),
+                          icon: Icon(Icons.edit),
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -483,10 +521,14 @@ class _ProductPageState extends State<ProductPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  SizedBox(height: 8), // Spacing above product name
                   Text(
                     _searchedProduct!.name,
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    maxLines: 1, // Ensure product name stays within bounds
+                    overflow: TextOverflow.ellipsis, // Ellipsis if overflow
                   ),
+                  SizedBox(height: 4), // Small spacing between name and qty
                   Text(
                     'qty: ${_searchedProduct!.qty}',
                     style: TextStyle(fontSize: 14),
@@ -494,11 +536,12 @@ class _ProductPageState extends State<ProductPage> {
                 ],
               ),
             ),
+            SizedBox(height: 8), // Spacing below qty text
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 IconButton(
-                  icon: Icon(Icons.edit, color: Colors.blueGrey),
+                  icon: Icon(Icons.edit),
                   onPressed: () {
                     Navigator.push(
                       context,

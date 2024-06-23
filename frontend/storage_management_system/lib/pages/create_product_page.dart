@@ -87,173 +87,272 @@ class _CreateProductPageState extends State<CreateProductPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blue[900], // Background color for the whole page
       appBar: AppBar(
         elevation: 0, // no shadow
         toolbarHeight: 50, // adjust height as needed
+        backgroundColor: Colors.blue[800],
       ),
       body: Padding(
         padding:
-            const EdgeInsets.fromLTRB(16.0, 24.0, 16.0, 0), // top padding added
+            const EdgeInsets.fromLTRB(16.0, 30.0, 16.0, 0), // top padding added
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Text(
               'Create New Product',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 28,
                 fontWeight: FontWeight.bold,
+                color: Colors.white, // Set text color to white
               ),
             ),
             SizedBox(height: 24.0),
-            Form(
-              key: _formKey,
-              child: Expanded(
-                child: ListView(
-                  shrinkWrap: true,
-                  children: <Widget>[
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Product Name',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter product name';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 16.0),
-                    TextFormField(
-                      controller: _qtyController,
-                      decoration: InputDecoration(
-                        labelText: 'Quantity',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter quantity';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 16.0),
-                    DropdownButtonFormField<String>(
-                      value: _selectedCategory,
-                      decoration: InputDecoration(
-                        labelText: 'Category',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: _categories.map((category) {
-                        return DropdownMenuItem(
-                          value: category['id'].toString(),
-                          child: Text(category['name']),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedCategory = value;
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null) {
-                          return 'Please select a category';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 16.0),
-                    TextFormField(
-                      readOnly: true,
-                      initialValue: _createdBy ?? ' --- ',
-                      decoration: InputDecoration(
-                        labelText: 'Created By',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    SizedBox(height: 16.0),
-                    ElevatedButton.icon(
-                      onPressed: _pickImage,
-                      icon: Icon(Icons.image),
-                      label: Text('Pick Product Image'),
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Colors.green, // foreground color
-                      ),
-                    ),
-                    SizedBox(height: 16.0),
-                    if (_imageFile != null)
-                      Image.file(
-                        _imageFile!,
-                        height: 50,
-                      ),
-                    SizedBox(height: 16.0),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          int? categoryId;
-
-                          try {
-                            categoryId = int.parse(_selectedCategory!);
-                          } catch (e) {
-                            print('Error parsing value: $e');
-                            return;
+            Container(
+              padding: EdgeInsets.all(20.0),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12.0),
+                color: Colors.white, // Container background color
+              ),
+              child: Form(
+                key: _formKey,
+                child: Expanded(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: <Widget>[
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          labelText: 'Product Name',
+                          labelStyle: TextStyle(
+                              color: Colors
+                                  .blue[800]), // Set label text color to blue
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: BorderSide(
+                                color: Colors.grey), // Set border color to grey
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: BorderSide(
+                                color: Colors
+                                    .grey), // Set enabled border color to grey
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: BorderSide(
+                                color: Colors
+                                    .blue), // Set focused border color to blue
+                          ),
+                        ),
+                        style: TextStyle(
+                            color: Colors.blue[800]), // Set text color to blue
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter product name';
                           }
-
-                          final productData = {
-                            'name': _nameController.text,
-                            'qty': _qtyController.text,
-                            'categoryId': categoryId,
-                            'createdBy': _createdBy,
-                          };
-
-                          var response;
-                          try {
-                            response = await ApiService.createProduct(
-                                productData, _imageFile);
-                            print('Product data: $productData');
-                            print(
-                                'Response status code: ${response.statusCode}');
-                            print('Response data: ${response.data}');
-                          } catch (e) {
-                            print('Error creating product: $e');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Failed to create product: $e'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          if (response.statusCode == 201) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Product created successfully'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                            _resetForm(); // Reset the form after successful creation
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Failed to create product: ${response.data}'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        }
-                      },
-                      child: Text('Create Product'),
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Colors.green, // foreground color
+                          return null;
+                        },
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 16.0),
+                      TextFormField(
+                        controller: _qtyController,
+                        decoration: InputDecoration(
+                          labelText: 'Quantity',
+                          labelStyle: TextStyle(
+                              color: Colors
+                                  .blue[800]), // Set label text color to blue
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: BorderSide(
+                                color: Colors.grey), // Set border color to grey
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: BorderSide(
+                                color: Colors
+                                    .grey), // Set enabled border color to grey
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: BorderSide(
+                                color: Colors
+                                    .blue), // Set focused border color to blue
+                          ),
+                        ),
+                        style: TextStyle(
+                            color: Colors.blue[800]), // Set text color to blue
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter quantity';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 16.0),
+                      DropdownButtonFormField<String>(
+                        value: _selectedCategory,
+                        decoration: InputDecoration(
+                          labelText: 'Category',
+                          labelStyle: TextStyle(
+                              color: Colors
+                                  .blue[800]), // Set label text color to blue
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: BorderSide(
+                                color: Colors.grey), // Set border color to grey
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: BorderSide(
+                                color: Colors
+                                    .grey), // Set enabled border color to grey
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: BorderSide(
+                                color: Colors
+                                    .blue), // Set focused border color to blue
+                          ),
+                        ),
+                        style: TextStyle(
+                            color: Colors.blue[800]), // Set text color to blue
+                        dropdownColor:
+                            Colors.white, // Set dropdown menu background color
+                        items: _categories.map((category) {
+                          return DropdownMenuItem(
+                            value: category['id'].toString(),
+                            child: Text(category['name'],
+                                style: TextStyle(color: Colors.blue[800])),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedCategory = value;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Please select a category';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 16.0),
+                      TextFormField(
+                        readOnly: true,
+                        initialValue: _createdBy ?? ' --- ',
+                        decoration: InputDecoration(
+                          labelText: 'Created By',
+                          labelStyle: TextStyle(
+                              color: Colors
+                                  .blue[800]), // Set label text color to blue
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: BorderSide(
+                                color: Colors.grey), // Set border color to grey
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: BorderSide(
+                                color: Colors
+                                    .grey), // Set enabled border color to grey
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: BorderSide(
+                                color: Colors
+                                    .blue), // Set focused border color to blue
+                          ),
+                        ),
+                        style: TextStyle(
+                            color: Colors.blue[800]), // Set text color to blue
+                      ),
+                      SizedBox(height: 16.0),
+                      ElevatedButton.icon(
+                        onPressed: _pickImage,
+                        icon: Icon(Icons.image),
+                        label: Text('Pick Product Image'),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor:
+                              Colors.blue, // Button background color
+                        ),
+                      ),
+                      SizedBox(height: 16.0),
+                      if (_imageFile != null)
+                        Image.file(
+                          _imageFile!,
+                          height: 50,
+                        ),
+                      SizedBox(height: 16.0),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (_formKey.currentState!.validate()) {
+                            int? categoryId;
+
+                            try {
+                              categoryId = int.parse(_selectedCategory!);
+                            } catch (e) {
+                              print('Error parsing value: $e');
+                              return;
+                            }
+
+                            final productData = {
+                              'name': _nameController.text,
+                              'qty': _qtyController.text,
+                              'categoryId': categoryId,
+                              'createdBy': _createdBy,
+                            };
+
+                            var response;
+                            try {
+                              response = await ApiService.createProduct(
+                                  productData, _imageFile);
+                              print('Product data: $productData');
+                              print(
+                                  'Response status code: ${response.statusCode}');
+                              print('Response data: ${response.data}');
+                            } catch (e) {
+                              print('Error creating product: $e');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to create product: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            if (response.statusCode == 201) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Product created successfully'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                              _resetForm(); // Reset the form after successful creation
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      'Failed to create product: ${response.data}'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        child: Text('Create Product'),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor:
+                              Colors.blue, // Button background color
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

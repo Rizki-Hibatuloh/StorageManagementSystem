@@ -60,7 +60,7 @@ class RegisterController with ChangeNotifier {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.orange[300],
+        backgroundColor: Colors.blue[800],
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),

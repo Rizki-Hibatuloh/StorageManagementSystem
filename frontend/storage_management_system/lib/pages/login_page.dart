@@ -35,9 +35,9 @@ class LoginPageContent extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           colors: [
-            Colors.orange[800]!,
-            Colors.orange[700]!,
-            Colors.orange[500]!,
+            Theme.of(context).primaryColorDark,
+            Theme.of(context).primaryColor,
+            Theme.of(context).primaryColorLight,
           ],
         ),
       ),
@@ -64,9 +64,9 @@ class LoginPageContent extends StatelessWidget {
           const SizedBox(height: 20),
           Expanded(
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(60),
                   topRight: Radius.circular(60),
                 ),
@@ -99,7 +99,7 @@ class LoginPageContent extends StatelessWidget {
                       CustomButton(
                         text: "Login",
                         onPressed: () => controller.login(context),
-                        color: Colors.orange[800]!,
+                        color: Theme.of(context).primaryColor,
                       ),
                       const SizedBox(height: 20),
                       Row(
@@ -110,7 +110,8 @@ class LoginPageContent extends StatelessWidget {
                             onTap: () => controller.goToRegister(context),
                             child: const Text(
                               "Signup",
-                              style: TextStyle(color: Colors.orange),
+                              style: TextStyle(
+                                  color: Color.fromARGB(255, 46, 160, 253)),
                             ),
                           ),
                         ],

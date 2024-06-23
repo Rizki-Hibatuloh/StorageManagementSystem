@@ -25,9 +25,9 @@ class _RegisterPageState extends State<RegisterPage> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             colors: [
-              Colors.orange[800]!,
-              Colors.orange[700]!,
-              Colors.orange[500]!,
+              Theme.of(context).primaryColorDark,
+              Theme.of(context).primaryColor,
+              Theme.of(context).primaryColorLight,
             ],
           ),
         ),
@@ -55,9 +55,9 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 20),
               Container(
                 height: MediaQuery.of(context).size.height - 220,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(60),
                     topRight: Radius.circular(60),
                   ),
@@ -95,7 +95,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       CustomButton(
                         text: "Register",
                         onPressed: () => controller.register(context),
-                        color: Colors.orange[800]!,
+                        color: Theme.of(context).primaryColor,
                       ),
                       const SizedBox(height: 20),
                       Row(
@@ -107,7 +107,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                 context, '/login'),
                             child: const Text(
                               "Login",
-                              style: TextStyle(color: Colors.orange),
+                              style: TextStyle(
+                                  color: Color.fromARGB(255, 46, 160, 253)),
                             ),
                           ),
                         ],
