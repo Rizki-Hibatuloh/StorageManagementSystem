@@ -1,39 +1,65 @@
-const { User }  = require('../models')
-const bcrypt    = require('bcryptjs')
-const jwt       = require('jsonwebtoken')
-const { where } = require('sequelize')
+const { User } = require('../models');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'images/profiles');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+}).single('image'); // Nama field harus 'image'
 
 class UserController {
-    async register(req, res) {
+async register(req, res) {
+  upload(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ err: 'File upload error' });
+    }
+
+    const { username, password } = req.body;
+    const file = req.file;
+
     try {
-      const { username, password, image } = req.body;
-
-      console.log(`Register attempt with username: ${username}`);
-
       if (!username || !password) {
         return res.status(400).json({ err: 'All fields are required' });
       }
 
+      // Check if username already exists
       const existingUser = await User.findOne({ where: { username } });
       if (existingUser) {
         return res.status(400).json({ err: 'Username is already taken' });
       }
 
+      // Hash the password
       const hashedPassword = await bcrypt.hash(password, 10);
-      const newUser = await User.create({ username, password: hashedPassword, image });
-      console.log('Registration successful', newUser);
+      // Prepare image URL
+      const imageUrl = file ? `/images/profiles/${file.filename}` : null;
+
+      // Create new user
+      const newUser = await User.create({ username, password: hashedPassword, image: imageUrl });
+
+      // Return success message with user details
       res.status(201).json({ message: 'Registration successful', user: newUser });
-    } catch (err) {
-      console.error('Failed to register:', err);
+    } catch (error) {
+      console.error('Failed to register:', error);
       res.status(500).json({ err: 'Failed to register' });
     }
-  }
+  });
+}
+
 
   async login(req, res) {
     try {
       const { username, password } = req.body;
-
-      console.log(`Login attempt with username: ${username}`);
 
       if (!username || !password) {
         return res.status(400).json({ err: 'All fields are required' });
@@ -41,48 +67,15 @@ class UserController {
 
       const user = await User.findOne({ where: { username } });
       if (!user || !await bcrypt.compare(password, user.password)) {
-        console.log('Invalid username or password');
         return res.status(401).json({ err: 'Invalid username or password' });
       }
 
       const token = jwt.sign({ id: user.id }, 'secret', { expiresIn: '1h' });
-      console.log('Login successful');
-      res.json({ status: 'Login Successful', token });
+      res.json({ status: 'Login Successful', token, image: user.image });
     } catch (err) {
-      console.error('Failed to login:', err);
       res.status(500).json({ err: 'Failed to login' });
     }
   }
-
-    async uploadProfile(req, res) {
-        try { 
-            console.log(`Received  userId:`,req.body.userId);
-            console.log(`Uploading image to:`, req.file);
-            if (!req.file) {
-                return res.status(400).json({ err : 'No file Uploaded'})
-            }
-
-            const { userId } = req.body;
-            const imageUrl = `/images/profiles${req.file.filename}`;
-
-            if (isNaN(userId)) {
-                return res.status(400).json({ err: 'Invalid UserId'})
-            }
-
-            const user = await User.findByPk(userId);
-            if (!user) {
-                return res.status(404).json({ err : 'User not found'})
-            }
-
-            await user.update({ image: imageUrl });
-            console.log('Profile image updated in database:', imageUrl);
-            res.status(200).json({ message: "Profile Image has been uploaded Successfully" })
-            
-        } catch (err) {
-            console.error('Error updating profile image:', err);
-            res.status(500).json({ err : 'Failed to uploaded profile Image'})
-        }
-    }
 }
 
 module.exports = UserController;

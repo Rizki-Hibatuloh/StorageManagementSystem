@@ -60,7 +60,7 @@ class LoginController {
   void goToRegister(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => RegisterPageContent()),
+      MaterialPageRoute(builder: (context) => RegisterPage()),
     );
   }
 }

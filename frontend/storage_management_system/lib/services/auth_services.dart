@@ -12,7 +12,7 @@ class AuthService {
   }) async {
     try {
       var response = await Dio().post(
-        'http://192.168.228.138:4000/users/login',
+        'http://192.168.159.138:4000/users/login',
         options: Options(
           headers: {
             'Content-Type': 'application/json',
@@ -27,9 +27,10 @@ class AuthService {
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('username', username);
+        await prefs.setString('token', token!);
 
-        if (obj['profilePicture'] != null) {
-          await prefs.setString('profilePicture', obj['profilePicture']);
+        if (obj.containsKey('image')) {
+          await prefs.setString('image', obj['image']);
         }
 
         return {'success': true, 'message': obj['status']};
@@ -54,12 +55,12 @@ class AuthService {
       FormData formData = FormData.fromMap({
         'username': username,
         'password': password,
-        'profilePicture': await MultipartFile.fromFile(image.path,
+        'image': await MultipartFile.fromFile(image.path,
             filename: image.path.split('/').last),
       });
 
       var response = await Dio().post(
-        'http://192.168.228.138:4000/users/register',
+        'http://192.168.159.138:4000/users/register',
         options: Options(
           headers: {
             'Content-Type': 'multipart/form-data',

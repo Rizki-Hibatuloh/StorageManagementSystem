@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:storage_management_system/models/product.dart';
 import 'package:storage_management_system/pages/create_product_page.dart';
 import 'package:storage_management_system/pages/login_page.dart';
 import 'package:storage_management_system/pages/update_product_page.dart';
@@ -29,7 +30,7 @@ class _ProductPageState extends State<ProductPage> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       username = prefs.getString('username');
-      profilePicture = prefs.getString('profilePicture');
+      profilePicture = prefs.getString('image');
     });
   }
 
@@ -55,10 +56,10 @@ class _ProductPageState extends State<ProductPage> {
     );
   }
 
-  // Fungsi untuk mencari produk berdasarkan ID
+// Fungsi untuk mencari produk berdasarkan ID
   Future<void> _searchProductById(String productId) async {
     try {
-      dynamic product = await ApiService.getProductById(productId);
+      Product product = await ApiService.getProductById(productId);
       setState(() {
         _searchedProduct = product;
       });
@@ -102,13 +103,6 @@ class _ProductPageState extends State<ProductPage> {
                     ),
                 ],
               ),
-            ),
-            ListTile(
-              leading: Icon(Icons.person, color: Colors.blueGrey),
-              title: Text('Profile', style: TextStyle(color: Colors.blueGrey)),
-              onTap: () {
-                Navigator.pop(context); // Close the drawer
-              },
             ),
             ListTile(
               leading: Icon(Icons.create, color: Colors.blueGrey),
@@ -288,7 +282,7 @@ class _ProductPageState extends State<ProductPage> {
                           aspectRatio: 16 / 9,
                           child: products[index]['urlImage'] != null
                               ? Image.network(
-                                  'http://192.168.228.138:4000${products[index]['urlImage']}',
+                                  'http://192.168.159.138:4000${products[index]['urlImage']}',
                                   fit: BoxFit.cover,
                                   errorBuilder: (BuildContext context,
                                       Object exception,
@@ -317,7 +311,7 @@ class _ProductPageState extends State<ProductPage> {
                                 fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            'Stock: ${products[index]['stock']}',
+                            'qty: ${products[index]['qty']}',
                             style: TextStyle(fontSize: 14),
                           ),
                         ],
@@ -380,7 +374,7 @@ class _ProductPageState extends State<ProductPage> {
                           aspectRatio: 16 / 9,
                           child: products[index]['urlImage'] != null
                               ? Image.network(
-                                  'http://192.168.228.138:4000${products[index]['urlImage']}',
+                                  'http://192.168.159.138:4000${products[index]['urlImage']}',
                                   fit: BoxFit.cover,
                                   errorBuilder: (BuildContext context,
                                       Object exception,
@@ -409,7 +403,7 @@ class _ProductPageState extends State<ProductPage> {
                                 fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            'Stock: ${products[index]['stock']}',
+                            'qty: ${products[index]['qty']}',
                             style: TextStyle(fontSize: 14),
                           ),
                         ],
@@ -459,7 +453,7 @@ class _ProductPageState extends State<ProductPage> {
                   aspectRatio: 16 / 9,
                   child: _searchedProduct['urlImage'] != null
                       ? Image.network(
-                          'http://192.168.228.138:4000${_searchedProduct['urlImage']}',
+                          'http://192.168.159.138:4000${_searchedProduct['urlImage']}',
                           fit: BoxFit.cover,
                           errorBuilder: (BuildContext context, Object exception,
                               StackTrace? stackTrace) {

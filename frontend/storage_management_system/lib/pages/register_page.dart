@@ -4,14 +4,14 @@ import 'package:storage_management_system/controllers/registerController.dart';
 import 'package:storage_management_system/widgets/button.dart';
 import 'package:storage_management_system/widgets/form.dart';
 
-class RegisterPageContent extends StatefulWidget {
-  const RegisterPageContent({Key? key}) : super(key: key);
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({Key? key}) : super(key: key);
 
   @override
-  State<RegisterPageContent> createState() => _RegisterPageContentState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageContentState extends State<RegisterPageContent> {
+class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final RegisterController controller =
@@ -31,29 +31,30 @@ class _RegisterPageContentState extends State<RegisterPageContent> {
             ],
           ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            const SizedBox(height: 80),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: const <Widget>[
-                  Text(
-                    "Register",
-                    style: TextStyle(color: Colors.white, fontSize: 40),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    "Create your account",
-                    style: TextStyle(color: Colors.white, fontSize: 18),
-                  ),
-                ],
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const SizedBox(height: 80),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: const <Widget>[
+                    Text(
+                      "Register",
+                      style: TextStyle(color: Colors.white, fontSize: 40),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "Create your account",
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: Container(
+              const SizedBox(height: 20),
+              Container(
+                height: MediaQuery.of(context).size.height - 220,
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.only(
@@ -80,7 +81,7 @@ class _RegisterPageContentState extends State<RegisterPageContent> {
                           const SizedBox(height: 8),
                           ElevatedButton(
                             onPressed: () => controller.pickImage(),
-                            child: Text('Pick Profile Picture'),
+                            child: const Text('Pick Profile Picture'),
                           ),
                           if (controller.image != null)
                             Image.file(
@@ -115,8 +116,8 @@ class _RegisterPageContentState extends State<RegisterPageContent> {
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

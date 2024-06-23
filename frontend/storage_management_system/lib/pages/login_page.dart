@@ -73,48 +73,50 @@ class LoginPageContent extends StatelessWidget {
               ),
               child: Padding(
                 padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: <Widget>[
-                    const SizedBox(height: 80),
-                    CustomForm(
-                      children: [
-                        CustomTextField(
-                          hintText: "Username",
-                          controller: controller.usernameController,
-                        ),
-                        CustomTextField(
-                          hintText: "Password",
-                          controller: controller.passwordController,
-                          isPassword: true,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      "Forgot Password?",
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                    const SizedBox(height: 20),
-                    CustomButton(
-                      text: "Login",
-                      onPressed: () => controller.login(context),
-                      color: Colors.orange[800]!,
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text("Don't have an account? "),
-                        InkWell(
-                          onTap: () => controller.goToRegister(context),
-                          child: const Text(
-                            "Signup",
-                            style: TextStyle(color: Colors.orange),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: <Widget>[
+                      const SizedBox(height: 80),
+                      CustomForm(
+                        children: [
+                          CustomTextField(
+                            hintText: "Username",
+                            controller: controller.usernameController,
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                          CustomTextField(
+                            hintText: "Password",
+                            controller: controller.passwordController,
+                            isPassword: true,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        "Forgot Password?",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 20),
+                      CustomButton(
+                        text: "Login",
+                        onPressed: () => controller.login(context),
+                        color: Colors.orange[800]!,
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text("Don't have an account? "),
+                          InkWell(
+                            onTap: () => controller.goToRegister(context),
+                            child: const Text(
+                              "Signup",
+                              style: TextStyle(color: Colors.orange),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

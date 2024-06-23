@@ -1,13 +1,16 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:storage_management_system/models/product.dart';
 
 class ApiService {
-  static final Dio _dio = Dio();
+  static final Dio _dio =
+      Dio(BaseOptions(baseUrl: 'http://192.168.159.138:4000'));
 
   static Future<List<dynamic>> getCategories() async {
     try {
-      final response = await _dio.get('http://192.168.228.138:4000/categories');
+      final response = await _dio.get('http://192.168.159.138:4000/categories');
       return response.data;
     } catch (e) {
       print('Error getting categories: $e');
@@ -18,7 +21,7 @@ class ApiService {
   static Future<List<dynamic>> getProductsByCategory(int categoryId) async {
     try {
       final response = await _dio
-          .get('http://192.168.228.138:4000/products?category=$categoryId');
+          .get('http://192.168.159.138:4000/products?category=$categoryId');
       return response.data;
     } catch (e) {
       print('Error getting products by category: $e');
@@ -28,7 +31,7 @@ class ApiService {
 
   static Future<List<dynamic>> getAllProducts() async {
     try {
-      final response = await _dio.get('http://192.168.228.138:4000/products');
+      final response = await _dio.get('http://192.168.159.138:4000/products');
       return response.data;
     } catch (e) {
       print('Error getting all products: $e');
@@ -38,9 +41,10 @@ class ApiService {
 
   static Future<dynamic> getProductById(String productId) async {
     try {
-      final response =
-          await _dio.get('http://192.168.228.138:4000/products/$productId');
-      return response.data;
+      final response = await _dio.get(
+          Uri.parse('http://192.168.159.138:4000/products/$productId')
+              as String);
+      return Product.fromJson(json.decode(response.data));
     } catch (e) {
       print('Error getting product by ID: $e');
       return null;
@@ -63,7 +67,7 @@ class ApiService {
 
     try {
       final response = await _dio.post(
-        'http://192.168.228.138:4000/products/create',
+        'http://192.168.159.138:4000/products/create',
         data: formData,
         options: Options(
           headers: {
@@ -95,7 +99,7 @@ class ApiService {
 
     try {
       final response = await _dio.put(
-        'http://192.168.228.138:4000/products/$productId',
+        'http://192.168.159.138:4000/products/$productId',
         data: formData,
         options: Options(
           headers: {
@@ -113,7 +117,7 @@ class ApiService {
   // Add the deleteProduct method here
   static Future<void> deleteProduct(int productId) async {
     try {
-      await _dio.delete('http://192.168.228.138:4000/products/$productId');
+      await _dio.delete('http://192.168.159.138:4000/products/$productId');
     } catch (e) {
       print('Error deleting product: $e');
       rethrow;

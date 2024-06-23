@@ -4,57 +4,70 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:storage_management_system/services/auth_services.dart';
 
-class RegisterController extends ChangeNotifier {
-  final usernameController = TextEditingController();
-  final passwordController = TextEditingController();
+class RegisterController with ChangeNotifier {
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   File? _image;
-
   File? get image => _image;
 
-  final ImagePicker _picker = ImagePicker();
-
   Future<void> pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      _image = File(pickedFile.path);
-      notifyListeners(); // Memberitahu listener bahwa state telah berubah
+    final pickedImage =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedImage != null) {
+      _image = File(pickedImage.path);
+      notifyListeners();
     }
   }
 
   Future<void> register(BuildContext context) async {
-    if (usernameController.text.isEmpty ||
-        passwordController.text.isEmpty ||
-        _image == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('All fields are required')),
-      );
-      return;
-    }
+    try {
+      String username = usernameController.text.trim();
+      String password = passwordController.text.trim();
 
-    var result = await AuthService().register(
-      username: usernameController.text,
-      password: passwordController.text,
-      image: _image!,
+      if (username.isEmpty || password.isEmpty) {
+        _showSnackbar(context, 'All fields are required');
+        return;
+      }
+
+      // Panggil AuthService untuk registrasi
+      Map<String, dynamic> result = await AuthService().register(
+        username: username,
+        password: password,
+        image: _image!,
+      );
+
+      if (result['success']) {
+        _showSnackbar(context, result['message']);
+        Navigator.pushReplacementNamed(context, '/login');
+      } else {
+        _showSnackbar(context, result['message']);
+      }
+    } catch (e) {
+      print('Registration failed: $e');
+      _showSnackbar(context, 'Registration failed');
+    }
+  }
+
+  void _showSnackbar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: TextStyle(
+            height: 2,
+            fontSize: 20,
+            color: Color.fromARGB(255, 241, 241, 241),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.orange[300],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        elevation: 10,
+        margin: EdgeInsets.all(10),
+      ),
     );
-
-    if (result['success']) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result['message'])),
-      );
-      Navigator.pushReplacementNamed(context, '/login');
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result['message'])),
-      );
-    }
-  }
-
-  void goToRegister(BuildContext context) {
-    Navigator.pushNamed(
-        context, '/register'); // Gunakan Navigator.pushNamed untuk rute bernama
-  }
-
-  void goToLogin(BuildContext context) {
-    Navigator.pushReplacementNamed(context, '/login');
   }
 }

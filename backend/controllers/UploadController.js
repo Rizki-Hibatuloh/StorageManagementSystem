@@ -26,12 +26,14 @@ class UploadController {
 
   static upload(folderName, fileFilter) {
     const storage = UploadController.fileStorage(folderName);
-    return multer({ 
-      storage: storage, 
+    return multer({
+      storage: storage,
       fileFilter: fileFilter,
       limits: { fileSize: 5 * 1024 * 1024 } // Limit file size to 5MB
     }).single('urlImage'); // Nama field harus 'urlImage'
   }
 }
+
+ 
 
 module.exports = UploadController;

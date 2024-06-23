@@ -1,12 +1,13 @@
-const express = require('express')
-const UserController = require('../controllers/UserController')
-const userController = new UserController();
-const UploadController =require('../controllers/UploadController')
+const express = require('express');
+const UserController = require('../controllers/UserController');
+const UploadController = require('../controllers/UploadController');
 
+const userController = new UserController();
 const router = express.Router();
 
-router.post('/register', (req, res) => userController.register(req, res))
-router.post('/login', (req, res) => userController.login(req, res))
-router.post('/profile', UploadController.upload('profiles'), (req, res) => userController.uploadProfile(req, res))
+// Rute untuk registrasi dengan upload gambar
+router.post('/register', (req, res) => userController.register(req, res));
+// Rute untuk login
+router.post('/login', (req, res) => userController.login(req, res));
 
 module.exports = router;
