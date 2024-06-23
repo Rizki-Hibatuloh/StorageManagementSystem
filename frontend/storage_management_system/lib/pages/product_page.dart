@@ -14,27 +14,27 @@ class ProductPage extends StatefulWidget {
 class _ProductPageState extends State<ProductPage> {
   String? username;
   String? profilePicture;
-  List<dynamic> _categories = []; // List untuk menyimpan kategori produk
+  List<dynamic> _categories = [];
   TextEditingController _searchController = TextEditingController();
-  dynamic _searchedProduct;
+  Product? _searchedProduct;
 
   @override
   void initState() {
     super.initState();
     _loadUser();
-    _loadCategories(); // Panggil fungsi untuk memuat kategori
+    _loadCategories();
   }
 
-  // Fungsi untuk memuat data pengguna dari SharedPreferences
   void _loadUser() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       username = prefs.getString('username');
       profilePicture = prefs.getString('image');
+      print('Username: $username');
+      print('Profile Picture URL: $profilePicture');
     });
   }
 
-  // Fungsi untuk memuat kategori dari API
   void _loadCategories() async {
     try {
       List<dynamic> categories = await ApiService.getCategories();
@@ -46,7 +46,11 @@ class _ProductPageState extends State<ProductPage> {
     }
   }
 
-  // Fungsi untuk logout dan menghapus data pengguna dari SharedPreferences
+  Future<List<Product>> _fetchProducts() async {
+    final response = await ApiService.getAllProducts();
+    return response.map<Product>((json) => Product.fromJson(json)).toList();
+  }
+
   void _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
@@ -56,18 +60,34 @@ class _ProductPageState extends State<ProductPage> {
     );
   }
 
-// Fungsi untuk mencari produk berdasarkan ID
   Future<void> _searchProductById(String productId) async {
     try {
-      Product product = await ApiService.getProductById(productId);
+      // Panggil API tanpa mengonversi ke URI
+      Product? product = await ApiService.getProductById(productId);
       setState(() {
-        _searchedProduct = product;
+        _searchedProduct =
+            product; // _searchedProduct harus nullable (Product?)
       });
     } catch (e) {
       print('Error searching product: $e');
       setState(() {
         _searchedProduct = null;
       });
+    }
+  }
+
+  Future<void> _deleteProduct(int productId) async {
+    try {
+      await ApiService.deleteProduct(productId);
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Product deleted successfully')),
+      );
+    } catch (e) {
+      print('Error deleting product: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete product')),
+      );
     }
   }
 
@@ -109,7 +129,7 @@ class _ProductPageState extends State<ProductPage> {
               title: Text('Create Product',
                   style: TextStyle(color: Colors.blueGrey)),
               onTap: () {
-                Navigator.pop(context); // Close the drawer
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => CreateProductPage()),
@@ -121,14 +141,14 @@ class _ProductPageState extends State<ProductPage> {
               title: Text('Logout', style: TextStyle(color: Colors.blueGrey)),
               onTap: () {
                 _logout();
-                Navigator.pop(context); // Close the drawer
+                Navigator.pop(context);
               },
             ),
           ],
         ),
       ),
       body: DefaultTabController(
-        length: _categories.length + 1, // Jumlah tab termasuk "All"
+        length: _categories.length + 1,
         child: Column(
           children: [
             Container(
@@ -156,7 +176,7 @@ class _ProductPageState extends State<ProductPage> {
                 ),
               ),
             ),
-            SizedBox(height: 20), // Jarak antara header dan judul kategori
+            SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Align(
@@ -177,10 +197,7 @@ class _ProductPageState extends State<ProductPage> {
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: 'Search by Product ID',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  hintText: 'Search Product by ID',
                   suffixIcon: IconButton(
                     icon: Icon(Icons.search),
                     onPressed: () {
@@ -191,71 +208,43 @@ class _ProductPageState extends State<ProductPage> {
               ),
             ),
             if (_searchedProduct != null) _buildSearchedProductView(),
-            if (_searchedProduct == null && _searchController.text.isNotEmpty)
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: Text('No product found with the given ID.'),
-              ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  8.5, 15, 8.5, 8), // Padding untuk TabBar
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: Colors.grey[300], // Warna background untuk TabBar
-                ),
-                child: TabBar(
-                  isScrollable: true, // Biarkan tab dapat di-scroll jika banyak
-                  indicator: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    color:
-                        Colors.deepOrange[300], // Warna untuk tab yang dipilih
-                  ),
-                  labelColor: Colors.white,
-                  unselectedLabelColor: Colors.black,
-                  tabs: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Tab(text: 'All'),
-                    ), // Tab baru untuk menampilkan semua produk
-                    ..._categories.map<Widget>((category) {
-                      return Tab(
-                        child: Container(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                          child: Text(category['name']),
+            if (_searchedProduct == null)
+              Expanded(
+                child: Column(
+                  children: [
+                    TabBar(
+                      isScrollable: true,
+                      indicatorColor: Colors.deepOrange[300],
+                      tabs: [
+                        Tab(
+                          text: 'All',
+                          icon: Icon(Icons.all_inclusive),
                         ),
-                      );
-                    }).toList(),
+                        for (var category in _categories)
+                          Tab(text: category['name']),
+                      ],
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _buildAllProductsView(),
+                          for (var category in _categories)
+                            _buildCategoryProductsView(category['id']),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  // Widget untuk menampilkan semua produk
-                  _buildAllProductsView(),
-
-                  // Widget untuk masing-masing kategori
-                  ..._categories.map<Widget>((category) {
-                    return _buildCategoryProductsView(category['id']);
-                  }).toList(),
-                ],
-              ),
-            ),
           ],
         ),
       ),
     );
   }
 
-  // Widget untuk menampilkan semua produk
   Widget _buildAllProductsView() {
     return FutureBuilder<List<dynamic>>(
-      future:
-          ApiService.getAllProducts(), // Metode untuk mendapatkan semua produk
+      future: ApiService.getAllProducts(),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           List<dynamic> products = snapshot.data!;
@@ -264,7 +253,7 @@ class _ProductPageState extends State<ProductPage> {
               crossAxisCount: 2,
               crossAxisSpacing: 8.0,
               mainAxisSpacing: 8.0,
-              childAspectRatio: 2 / 3, // Set aspect ratio sesuai kebutuhan
+              childAspectRatio: 2 / 3,
             ),
             itemCount: products.length,
             itemBuilder: (context, index) {
@@ -282,7 +271,7 @@ class _ProductPageState extends State<ProductPage> {
                           aspectRatio: 16 / 9,
                           child: products[index]['urlImage'] != null
                               ? Image.network(
-                                  'http://192.168.159.138:4000${products[index]['urlImage']}',
+                                  'http://192.168.88.138:4000${products[index]['urlImage']}',
                                   fit: BoxFit.cover,
                                   errorBuilder: (BuildContext context,
                                       Object exception,
@@ -306,7 +295,7 @@ class _ProductPageState extends State<ProductPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            products[index]['name'] ?? '',
+                            products[index]['name'],
                             style: TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.bold),
                           ),
@@ -317,18 +306,29 @@ class _ProductPageState extends State<ProductPage> {
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.edit, color: Colors.blueGrey),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => UpdateProductPage(
-                              product: products[index],
-                            ),
-                          ),
-                        );
-                      },
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit, color: Colors.blueGrey),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => UpdateProductPage(
+                                  product: Product.fromJson(products[index]),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            _deleteProduct(products[index]['id']);
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -344,7 +344,6 @@ class _ProductPageState extends State<ProductPage> {
     );
   }
 
-  // Widget untuk menampilkan produk berdasarkan kategori
   Widget _buildCategoryProductsView(int categoryId) {
     return FutureBuilder<List<dynamic>>(
       future: ApiService.getProductsByCategory(categoryId),
@@ -356,7 +355,7 @@ class _ProductPageState extends State<ProductPage> {
               crossAxisCount: 2,
               crossAxisSpacing: 8.0,
               mainAxisSpacing: 8.0,
-              childAspectRatio: 2 / 3, // Set aspect ratio sesuai kebutuhan
+              childAspectRatio: 2 / 3,
             ),
             itemCount: products.length,
             itemBuilder: (context, index) {
@@ -374,7 +373,7 @@ class _ProductPageState extends State<ProductPage> {
                           aspectRatio: 16 / 9,
                           child: products[index]['urlImage'] != null
                               ? Image.network(
-                                  'http://192.168.159.138:4000${products[index]['urlImage']}',
+                                  'http://192.168.88.138:4000${products[index]['urlImage']}',
                                   fit: BoxFit.cover,
                                   errorBuilder: (BuildContext context,
                                       Object exception,
@@ -398,7 +397,7 @@ class _ProductPageState extends State<ProductPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            products[index]['name'] ?? '',
+                            products[index]['name'],
                             style: TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.bold),
                           ),
@@ -409,18 +408,29 @@ class _ProductPageState extends State<ProductPage> {
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.edit, color: Colors.blueGrey),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => UpdateProductPage(
-                              product: products[index],
-                            ),
-                          ),
-                        );
-                      },
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit, color: Colors.blueGrey),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => UpdateProductPage(
+                                  product: Product.fromJson(products[index]),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            _deleteProduct(products[index]['id']);
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -436,8 +446,11 @@ class _ProductPageState extends State<ProductPage> {
     );
   }
 
-  // Widget untuk menampilkan hasil pencarian produk
   Widget _buildSearchedProductView() {
+    if (_searchedProduct == null) {
+      return Center(child: Text('No product found'));
+    }
+
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Card(
@@ -446,29 +459,24 @@ class _ProductPageState extends State<ProductPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(4.0)),
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: _searchedProduct['urlImage'] != null
-                      ? Image.network(
-                          'http://192.168.159.138:4000${_searchedProduct['urlImage']}',
-                          fit: BoxFit.cover,
-                          errorBuilder: (BuildContext context, Object exception,
-                              StackTrace? stackTrace) {
-                            return Container(
-                              color: Colors.grey,
-                              child: Icon(Icons.image_not_supported),
-                            );
-                          },
-                        )
-                      : Container(
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: _searchedProduct!.urlImage != null
+                  ? Image.network(
+                      'http://192.168.88.138:4000${_searchedProduct!.urlImage}',
+                      fit: BoxFit.cover,
+                      errorBuilder: (BuildContext context, Object exception,
+                          StackTrace? stackTrace) {
+                        return Container(
                           color: Colors.grey,
-                          child: Icon(Icons.image),
-                        ),
-                ),
-              ),
+                          child: Icon(Icons.image_not_supported),
+                        );
+                      },
+                    )
+                  : Container(
+                      color: Colors.grey,
+                      child: Icon(Icons.image),
+                    ),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -476,28 +484,39 @@ class _ProductPageState extends State<ProductPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _searchedProduct['name'] ?? '',
+                    _searchedProduct!.name,
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    'Stock: ${_searchedProduct['stock']}',
+                    'qty: ${_searchedProduct!.qty}',
                     style: TextStyle(fontSize: 14),
                   ),
                 ],
               ),
             ),
-            IconButton(
-              icon: Icon(Icons.edit, color: Colors.blueGrey),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => UpdateProductPage(
-                      product: _searchedProduct,
-                    ),
-                  ),
-                );
-              },
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.edit, color: Colors.blueGrey),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => UpdateProductPage(
+                          product: _searchedProduct!,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    _deleteProduct(_searchedProduct!.id);
+                  },
+                ),
+              ],
             ),
           ],
         ),

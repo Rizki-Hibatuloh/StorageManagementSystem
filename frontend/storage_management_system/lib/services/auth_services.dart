@@ -6,13 +6,26 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AuthService {
   static String? token;
 
+  // Fungsi untuk menyimpan username
+  Future<void> _saveUsername(String username) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('username', username);
+    print('Username saved: $username'); // Debugging output
+  }
+
+  // Fungsi untuk mendapatkan username dari SharedPreferences
+  Future<String?> getUsername() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('username');
+  }
+
   Future<Map<String, dynamic>> login({
     required String username,
     required String password,
   }) async {
     try {
       var response = await Dio().post(
-        'http://192.168.159.138:4000/users/login',
+        'http://192.168.88.138:4000/users/login',
         options: Options(
           headers: {
             'Content-Type': 'application/json',
@@ -30,7 +43,8 @@ class AuthService {
         await prefs.setString('token', token!);
 
         if (obj.containsKey('image')) {
-          await prefs.setString('image', obj['image']);
+          String imageUrl = 'http://192.168.88.138:4000${obj['image']}';
+          await prefs.setString('image', imageUrl);
         }
 
         return {'success': true, 'message': obj['status']};
@@ -60,7 +74,7 @@ class AuthService {
       });
 
       var response = await Dio().post(
-        'http://192.168.159.138:4000/users/register',
+        'http://192.168.88.138:4000/users/register',
         options: Options(
           headers: {
             'Content-Type': 'multipart/form-data',

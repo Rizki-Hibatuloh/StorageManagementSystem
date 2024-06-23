@@ -15,7 +15,7 @@ class _CreateProductPageState extends State<CreateProductPage> {
   final _nameController = TextEditingController();
   final _qtyController = TextEditingController();
   String? _selectedCategory;
-  int? _createdBy;
+  String? _createdBy;
   File? _imageFile;
   List<dynamic> _categories = [];
 
@@ -28,10 +28,9 @@ class _CreateProductPageState extends State<CreateProductPage> {
 
   void _loadUser() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    int? userId = prefs.getInt('userId');
+    String? username = prefs.getString('username');
     setState(() {
-      _createdBy = userId ??
-          -1; // -1 atau nilai default yang sesuai jika userId tidak ada
+      _createdBy = username ?? ' --- ';
     });
   }
 
@@ -52,7 +51,6 @@ class _CreateProductPageState extends State<CreateProductPage> {
 
     if (pickedFile != null) {
       if (!_isValidImageType(pickedFile.path)) {
-        // File tidak valid, berikan pesan kesalahan
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content:
@@ -67,165 +65,199 @@ class _CreateProductPageState extends State<CreateProductPage> {
         _imageFile = File(pickedFile.path);
       });
 
-      // Menambahkan debugging untuk melihat tipe MIME dari file yang dipilih
       print('MIME type: ${_imageFile!.path.split('.').last}');
     }
   }
 
-// Validasi tipe file
   bool _isValidImageType(String path) {
     final validTypes = ['jpg', 'jpeg', 'png'];
     final fileType = path.split('.').last.toLowerCase();
     return validTypes.contains(fileType);
   }
 
+  void _resetForm() {
+    setState(() {
+      _nameController.clear();
+      _qtyController.clear();
+      _selectedCategory = null;
+      _imageFile = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create Product'),
+        elevation: 0, // no shadow
+        toolbarHeight: 50, // adjust height as needed
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: <Widget>[
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Product Name',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter product name';
-                  }
-                  return null;
-                },
+        padding:
+            const EdgeInsets.fromLTRB(16.0, 24.0, 16.0, 0), // top padding added
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              'Create New Product',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
               ),
-              SizedBox(height: 16.0),
-              TextFormField(
-                controller: _qtyController,
-                decoration: InputDecoration(
-                  labelText: 'Quantity',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter quantity';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16.0),
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: InputDecoration(
-                  labelText: 'Category',
-                  border: OutlineInputBorder(),
-                ),
-                items: _categories.map((category) {
-                  return DropdownMenuItem(
-                    value: category['id'].toString(),
-                    child: Text(category['name']),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedCategory = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null) {
-                    return 'Please select a category';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16.0),
-              TextFormField(
-                readOnly: true,
-                initialValue: _createdBy?.toString() ?? 'Unknown User',
-                decoration: InputDecoration(
-                  labelText: 'Created By',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 16.0),
-              ElevatedButton(
-                onPressed: _pickImage,
-                child: Text('Pick Product Image'),
-              ),
-              SizedBox(height: 16.0),
-              if (_imageFile != null)
-                Image.file(
-                  _imageFile!,
-                  height: 100,
-                ),
-              SizedBox(height: 16.0),
-              ElevatedButton(
-                onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    int? categoryId;
-                    int? createdBy;
+            ),
+            SizedBox(height: 24.0),
+            Form(
+              key: _formKey,
+              child: Expanded(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: <Widget>[
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Product Name',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter product name';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 16.0),
+                    TextFormField(
+                      controller: _qtyController,
+                      decoration: InputDecoration(
+                        labelText: 'Quantity',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter quantity';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 16.0),
+                    DropdownButtonFormField<String>(
+                      value: _selectedCategory,
+                      decoration: InputDecoration(
+                        labelText: 'Category',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _categories.map((category) {
+                        return DropdownMenuItem(
+                          value: category['id'].toString(),
+                          child: Text(category['name']),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCategory = value;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Please select a category';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 16.0),
+                    TextFormField(
+                      readOnly: true,
+                      initialValue: _createdBy ?? ' --- ',
+                      decoration: InputDecoration(
+                        labelText: 'Created By',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 16.0),
+                    ElevatedButton.icon(
+                      onPressed: _pickImage,
+                      icon: Icon(Icons.image),
+                      label: Text('Pick Product Image'),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.green, // foreground color
+                      ),
+                    ),
+                    SizedBox(height: 16.0),
+                    if (_imageFile != null)
+                      Image.file(
+                        _imageFile!,
+                        height: 50,
+                      ),
+                    SizedBox(height: 16.0),
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (_formKey.currentState!.validate()) {
+                          int? categoryId;
 
-                    try {
-                      categoryId = int.parse(_selectedCategory!);
-                      createdBy = _createdBy;
-                    } catch (e) {
-                      print('Error parsing value: $e');
-                      return;
-                    }
+                          try {
+                            categoryId = int.parse(_selectedCategory!);
+                          } catch (e) {
+                            print('Error parsing value: $e');
+                            return;
+                          }
 
-                    final productData = {
-                      'name': _nameController.text,
-                      'qty': _qtyController.text,
-                      'categoryId': categoryId,
-                      'createdBy': createdBy,
-                    };
+                          final productData = {
+                            'name': _nameController.text,
+                            'qty': _qtyController.text,
+                            'categoryId': categoryId,
+                            'createdBy': _createdBy,
+                          };
 
-                    var response;
-                    try {
-                      response = await ApiService.createProduct(
-                          productData, _imageFile);
-                      print('Product data: $productData');
-                      print('Response status code: ${response.statusCode}');
-                      print('Response data: ${response.data}');
-                    } catch (e) {
-                      print('Error creating product: $e');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Failed to create product: $e'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                      return;
-                    }
+                          var response;
+                          try {
+                            response = await ApiService.createProduct(
+                                productData, _imageFile);
+                            print('Product data: $productData');
+                            print(
+                                'Response status code: ${response.statusCode}');
+                            print('Response data: ${response.data}');
+                          } catch (e) {
+                            print('Error creating product: $e');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to create product: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
 
-                    if (response.statusCode == 201) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Product created successfully'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              'Failed to create product: ${response.data}'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  }
-                },
-                child: Text('Create Product'),
+                          if (response.statusCode == 201) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Product created successfully'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            _resetForm(); // Reset the form after successful creation
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Failed to create product: ${response.data}'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      child: Text('Create Product'),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.green, // foreground color
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

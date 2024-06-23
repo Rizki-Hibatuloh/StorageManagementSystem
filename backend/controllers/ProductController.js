@@ -12,19 +12,19 @@ class ProductController {
     }
   }
 
-  async getProductById(req, res) {
-    try {
-      const { id } = req.params;
-      const product = await Product.findByPk(id);
-      if (!product) {
-        return res.status(404).json({ error: 'Product not found' });
-      }
-      res.json(product);
-    } catch (err) {
-      console.error('Error fetching product:', err);
-      res.status(500).json({ error: 'Failed to fetch product' });
+async getProductById(req, res) {
+  try {
+    const { id } = req.params;
+    const product = await Product.findByPk(id);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
     }
+    res.json(product);
+  } catch (err) {
+    console.error('Error fetching product:', err);
+    res.status(500).json({ error: 'Failed to fetch product' });
   }
+}
 
   async createProduct(req, res) {
     try {
@@ -52,24 +52,28 @@ class ProductController {
   }
 
   async updateProduct(req, res) {
-    try {
-      const { id } = req.params;
-      const { name, qty, categoryId, createdBy, updatedBy } = req.body;
-      const product = await Product.findByPk(id);
-      if (!product) {
-        return res.status(404).json({ error: 'Product not found' });
-      }
-      let urlImage = product.urlImage;
-      if (req.file) {
-        urlImage = `/images/products/${req.file.filename}`;
-      }
-      await product.update({ name, qty, categoryId, urlImage, createdBy, updatedBy });
-      res.json({ message: 'Product has been updated successfully' });
-    } catch (err) {
-      console.error('Error updating product:', err);
-      res.status(500).json({ error: 'Failed to update product' });
+  try {
+    const { id } = req.params;
+    const { name, qty, categoryId, createdBy, updatedBy } = req.body;
+    const product = await Product.findByPk(id);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
     }
+
+    let urlImage = product.urlImage; // Default to current image
+    if (req.file) {
+      urlImage = `/images/products/${req.file.filename}`; // Use new image if available
+    }
+
+    await product.update({ name, qty, categoryId, urlImage, createdBy, updatedBy });
+    res.json({ message: 'Product has been updated successfully' });
+  } catch (err) {
+    console.error('Error updating product:', err);
+    res.status(500).json({ error: 'Failed to update product' });
   }
+}
+
+
 
   async deleteProduct(req, res) {
     try {

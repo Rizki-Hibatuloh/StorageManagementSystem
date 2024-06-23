@@ -22,4 +22,18 @@ class Product {
       urlImage: json['urlImage'],
     );
   }
+
+  get updatedBy => null;
+
+  get createdBy => null;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'qty': qty,
+      'categoryId': categoryId,
+      'urlImage': urlImage,
+    };
+  }
 }
